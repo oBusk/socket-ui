@@ -1,0 +1,24 @@
+{
+  "name": "socket-ui",
+  "description": "Just a tiny attempt at building a UI modifiable live from a setup-page.",  
+  "private": true,
+  "version": "0.0.1",
+  "repository": {
+      "type": "git",
+      "url": "https://github.com/oBusk/socket-ui.git"
+  },
+  "main": "generated/app.js",
+  "scripts": {
+      "start": "npm install && gulp",
+      "postinstall": "tsd install"
+  },
+  "dependencies": {
+    "express": "^4.13.3",
+    "gulp": "^3.9.0",
+    "gulp-concat": "^2.6.0",
+    "gulp-sourcemaps": "^1.6.0",
+    "gulp-typescript": "^2.10.0",
+    "socket.io": "^1.4.3",
+    "typescript": "^1.7.5"
+  }
+}
