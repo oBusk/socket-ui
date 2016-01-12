@@ -1,26 +1,24 @@
 var gulp = require('gulp');
 var path = require('path');
 var del = require('del');
-var spawn = require('child_process').spawn;
 var ts = require('gulp-typescript');
 var tsd = require('gulp-tsd');
 var sourcemaps = require('gulp-sourcemaps');
 var concat = require('gulp-concat');
-
-var node;
+var browserSync = require('browser-sync');
+var nodemon = require('gulp-nodemon');
 
 /** 
  * Define the default task. 
  */
-gulp.task('default', ['build']);
+gulp.task('default', ['scripts']);
 
 gulp.task('clean', ['server:clean', 'display:clean']);
-gulp.task('build', ['server:build', 'display:build']);
+gulp.task('scripts', ['server:scripts', 'display:scripts']);
 gulp.task('tsd', ['server:tsd', 'display:tsd']);
-gulp.task('watch', ['build', 'server:watch', 'display:watch']);
-/** Builds everything and starts server (thourough) */
-gulp.task('run', ['tsd', 'build', 'server']);
-gulp.task('cleanrun', ['clean', 'tsd', 'run']); // doesn't work :( gulp-tsd doesn't handle the callback as it should
+gulp.task('watch', ['server:scripts:watch', 'display:scripts:watch']);
+gulp.task('browser-sync', ['display:browser-sync']);
+gulp.task('develop', ['watch', 'nodemon', 'browser-sync']); // watch for changes in any module, run server, browsersync.
 
 var serverPath = "server";
 var serverBuiltPath = path.join(serverPath, "built");
@@ -29,26 +27,19 @@ var serverExecutableName = "app.js";// TODO: read outFile from tsconfig.json
 gulp.task('server:clean', function (cb) {
     return del([
         serverBuiltPath,
-        path.join(serverPath, "typings")// TODO: read foldername from tsd.json
+        path.join(serverPath, "typings"),// TODO: read foldername from tsd.json
     ]);
 });
 
-/**
- * downloads all the definition/typings files.
- */
 gulp.task('server:tsd', function (cb) {
     tsd({
         "command": "reinstall",
         "config": path.join(serverPath, "tsd.json"),
-        "latest": false
+        "latest": false,
     }, cb);
 });
 
-/**
- * compiles the server.
- * requires that gulp-tsd has fetched all the typings.
- */
-gulp.task('server:build', function () {
+gulp.task('server:scripts', function () {
     console.log("Compiling server typescript");
     
     // Read the TS projectfile
@@ -64,33 +55,38 @@ gulp.task('server:build', function () {
         .pipe(gulp.dest(serverBuiltPath));
 });
 
-gulp.task('server:watch', ['server'], function () {
-    return gulp.watch(path.join(serverPath, '**.ts'), ['server:build', 'server']);
+gulp.task('server:scripts:watch', ['server:scripts'], function () {
+    return gulp.watch(path.join(serverPath, '**.ts'), ['server:scripts']);
 });
 
-/**
- * https://gist.github.com/webdesserts/5632955
- * launch the server. If there's a server already running, kill it.
- */
-gulp.task('server', ['server:build'], function () {
-    if (node) node.kill()
-    node = spawn('node', [path.join(serverBuiltPath, serverExecutableName)], { stdio: 'inherit' })
-    node.on('close', function (code) {
-        if (code === 8) {
-            gulp.log('Error detected, waiting for changes...');
+gulp.task('nodemon', ['scripts'], function (cb) {
+    var started = false;
+
+    return nodemon({
+        script: path.join(serverBuiltPath, serverExecutableName), // the server node script
+        watch: serverBuiltPath,
+    }).on('start', function () {
+        // to avoid nodemon being started multiple times
+        if (!started) {
+            cb();
+            started = true;
         }
+    }).on('restart', function () {
+        setTimeout(function () {
+            browserSync.reload();
+        }, 500); // #lukas - there's no better way i'm afraid...
     });
 });
 
 var displayPath = "display";
-var displayConcatName = "app.js";
 var displayServePath = path.join(displayPath, "serve");
 var displayBuiltPath = path.join(displayServePath, "js");
+var displayConcatName = "app.js";
 
 gulp.task('display:clean', function () {
     return del([
         displayBuiltPath,
-        path.join(displayPath, "typings")// TODO: read foldername from tsd.json
+        path.join(displayPath, "typings"),// TODO: read foldername from tsd.json
     ])
 });
 
@@ -98,11 +94,11 @@ gulp.task('display:tsd', function (cb) {
     tsd({
         "command": "reinstall",
         "config": path.join(displayPath, "tsd.json"),
-        "latest": false
+        "latest": false,
     }, cb);
 });
 
-gulp.task('display:build', function () {
+gulp.task('display:scripts', function () {
     console.log("Compiling display typescript");
     
     // Read the TS projectfile
@@ -118,11 +114,16 @@ gulp.task('display:build', function () {
         .pipe(gulp.dest(displayBuiltPath));
 });
 
-gulp.task('display:watch', ['display:build'], function () {
-    return gulp.watch(path.join(displayPath, "**.ts"), ['display:build']);
+gulp.task('display:scripts:watch', ['display:scripts'], function () {
+    return gulp.watch(path.join(displayPath, "**.ts"), ['display:scripts']);
 });
 
-// clean up if an error goes unhandled.
-process.on('exit', function () {
-    if (node) node.kill()
-})
+gulp.task('display:browser-sync', ['display:scripts:watch', 'nodemon'], function () {
+    browserSync.init({
+        proxy: {
+            target: "http://localhost:1337",// TODO: this port needs to be stored somewhere
+            ws: true, // tell browsersync we need to use websockets http://apsdsm.com/browsersync-with-socket-io/
+        },
+        files: [path.join(displayServePath, "**.*")],
+    });
+});

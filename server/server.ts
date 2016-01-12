@@ -13,11 +13,10 @@ const io = socketio.listen(displayServer);
 
 io.on('connection', function (socket) {
     console.log("CONNECTION");
-    socket.emit('news', { hello: 'world' });
-    socket.on('my other event', function(data: string) {
-        console.log(data);
-    });
-    
+    socket.on('display connected', function() {
+        console.log("Display connected");
+        socket.emit('welcome display', "Welcome to the server, display");
+    });    
 });
 
 console.log(`Server started!`);
