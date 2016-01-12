@@ -1,16 +1,15 @@
 {
-    "version": "0.0.1",
     "compilerOptions": {
         "target": "es6",
         "module": "commonjs",
         "noImplicitAny": true,
         "removeComments": true,
-        "outDir": "generated",
+        "outDir": "built",
+        "outFile": "built/app.js",
         "sourceMap": true,
         "declaration": true
     },
     "exclude": [
-        "node_modules",
-        "generated"
+        "built"
     ]
 }

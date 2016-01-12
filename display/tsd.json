@@ -1,0 +1,11 @@
+{
+  "version": "v4",
+  "repo": "borisyankov/DefinitelyTyped",
+  "ref": "master",
+  "path": "typings",
+  "installed": {
+    "socket.io-client/socket.io-client.d.ts": {
+      "commit": "627b6c158b73494c803f36fc2fe00ad75faa8fde"
+    }
+  }
+}

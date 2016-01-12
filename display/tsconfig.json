@@ -1,0 +1,15 @@
+{
+    "compilerOptions": {
+        "target": "es6",
+        "module": "commonjs",
+        "noImplicitAny": true,
+        "removeComments": true,
+        "outDir": "serve/js",
+        "outFile": "serve/js/app.js",
+        "sourceMap": true,
+        "declaration": true
+    },
+    "exclude": [
+        "serve"
+    ]
+}
